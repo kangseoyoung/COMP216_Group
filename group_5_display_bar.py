@@ -5,7 +5,7 @@ Created on Fri Mar 26 23:19:04 2021
 @author: Group 5
 """
 from tkinter import *
-from group_5_data_generator import temperature_day_records
+import group_5_data_generator as dg
 
 class Bar(Frame):
 
@@ -43,12 +43,26 @@ class Bar(Frame):
         e1 = Entry(canvas)
         canvas.create_window(130,120,window=e1)
         
+        # get temperature
+        button2 = Button(self, text = "Get", command = lambda: get_command(), anchor = W)
+        button2_window = canvas.create_window(200, 135, anchor=NW, window=button2)
+
         # refresh temperature
-        button1 = Button(self, text = "Refresh", command = lambda: canvas.coords(self.mercury, 290, 600 - abs(int(e1.get()))/80 * 800, 310, 975), anchor = W)
+        button1 = Button(self, text = "Refresh", command = lambda: refresh(), anchor = W)
         button1_window = canvas.create_window(100, 135, anchor=NW, window=button1)
         
         # pack
         canvas.pack(fill=BOTH, expand=1)
+
+        # get_command
+        def get_command():
+            e1.delete(0, 'end')
+            e1.insert(0,f"{dg.sample_set().data:.2f}")
+            refresh()
+        
+        # refresh command
+        def refresh():
+            canvas.coords(self.mercury, 290, 600 - abs(float(e1.get()))/80 * 800, 310, 975)
         
     '''
     def refreshTemperature(self, temperature = 0):  
