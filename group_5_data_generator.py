@@ -1,6 +1,4 @@
 """
-Created on Fri Mar 26 23:19:04 2021
-
 @author: Group 5
 """
 import random
@@ -43,7 +41,10 @@ class sample_set:
             self.random_dict['value'] = random.randint(850, 950)/1000
         return round(self.random_dict['value'],2)
 
-# size = 500
-# y_data = [sample_set().data for _ in range(size)]
-# plt.plot(y_data, 'g')
-# plt.show()
+size = 500
+y_data = [sample_set().data for _ in range(size)]
+plt.plot(y_data, 'g')
+plt.xlabel('Time') 
+plt.ylabel('Temperature(C)') 
+plt.title("Temperature Sensor in the house")
+plt.show()
