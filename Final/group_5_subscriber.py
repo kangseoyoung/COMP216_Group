@@ -27,15 +27,29 @@ class Subscriber:
         msg = msg.decode('utf-8')
         payload = json.loads(msg)
         print("")
-        # print("\n----------- Decoded msg -----------\n")
-        # self.print_data(payload)
-        self.values.append(payload.get('temperature'))
+        if len(self.values) < 30:
+            self.process_data(payload)
+        elif self.is_extream_outlier(float(payload.get('temperature'))) == False:
+            self.process_data(payload)
+
+    def process_data(self, payload) -> None:
+        self.values.append(float(payload.get('temperature')))
         self.timestamps.append(payload.get('datetime'))
         # refresh gui
         self.values = self.bar.y_val
         self.timestamps = self.bar.x_val
-        # self.bar.refresh_plot()
         self.bar.master.event_generate("<<refresh_plot>>", when="tail")
+    
+    def is_extream_outlier(self, value) -> bool:
+        values_size = len(self.values)
+        samples = self.values[values_size - 30:]
+        sorted_samples = sorted(samples)
+        P75 = sorted_samples[round(0.75*len(sorted_samples))]
+        P25 = sorted_samples[round(0.25*len(sorted_samples))]
+        IQR = P75 - P25
+        LOF = P25 - 3*IQR
+        HOF = P75 + 3*IQR
+        return (value < LOF or value > HOF)
 
     def print_data(self, payload):
         print(f"Message ID: {payload.get('id')}\n"\
@@ -54,7 +68,6 @@ class Subscriber:
         self.mqttc.loop_forever()
 
     # static methods for mqtt
-
     def _on_connect(self, mqttc, userdata, flags, rc):
         print('connected...rc=' + str(rc))
         mqttc.subscribe(topic='iot/measure/thermometer', qos=0)

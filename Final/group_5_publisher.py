@@ -40,7 +40,7 @@ class Publisher:
         self.temperature = self.get_data() # get the temperature from the method
         # outlier generator
         virtual_outlier_adds = random.randint(1, 100)
-        if (virtual_outlier_adds == 50): # TODO: CHANGE THIS, ODDS IS HIGHER THAN THE STANDARD JUST FOR A TEST
+        if (virtual_outlier_adds < 5): # TODO: CHANGE THIS, ODDS IS HIGHER THAN THE STANDARD JUST FOR A TEST
             self.temperature += random.randint(20, 40)
         
         time.sleep(1) # Sleep
@@ -108,7 +108,7 @@ class Publisher:
     def _on_publish(self, mqttc, userdata, mid):
         print(f"Message No.{mid}")
     
-# GUI
+# gui
 class Bar(Frame):
     def __init__(self, serial: str) -> None:
         super().__init__()
