@@ -1,14 +1,11 @@
 import json
+import threading
 from datetime import datetime, timedelta
-from time import strftime, strptime
-from typing import Dict
 from tkinter import *
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 import matplotlib.dates as md
 import paho.mqtt.client as mqtt
-import group_5_data_generator as dg
-import threading
 
 class Subscriber:
     def __init__(self):
