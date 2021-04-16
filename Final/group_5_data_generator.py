@@ -46,6 +46,3 @@ class sample_set:
             self.random_dict['value'] = random.randint(850, 950)/1000
             
         return round(self.random_dict['value'],2)
-
-# to check the pattern, use the test code below;
-

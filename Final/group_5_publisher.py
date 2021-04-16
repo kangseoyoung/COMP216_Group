@@ -40,7 +40,7 @@ class Publisher:
         self.temperature = self.get_data() # get the temperature from the method
         # outlier generator
         virtual_outlier_adds = random.randint(1, 100)
-        if (virtual_outlier_adds < 5): # TODO: CHANGE THIS, ODDS IS HIGHER THAN THE STANDARD JUST FOR A TEST
+        if (virtual_outlier_adds < 5): # outlier happens in the possibility of 5%
             self.temperature += random.randint(20, 40)
         
         time.sleep(1) # Sleep
@@ -71,19 +71,33 @@ class Publisher:
         while (self.max_msg > 0 or self.infinite_loop == True):
             virtual_failure_odds = random.randint(1, 100) # for the virtual failure
             try:
-                msg_dict = self.create_data() # get mqss data dict
+                # filter abnormal temperature
+                # the range of sensing is -30 ~ 50 celsius
+                max_retry = 10
+                retry = 1
+                msg_dict = self.create_data()
+                while retry <= max_retry and (self.temperature > 50 or self.temperature < -30):
+                    # when the temperature is considered as abnormal, immediately it remeasure
+                    print(f"Abnormal temperature was detected, Retrying to measure({retry}/{max_retry})")
+                    msg_dict = self.create_data() # get mqss data dict
+                    retry += 1
+                # if it fails 10 times in a row, exit the application
+                if retry > max_retry:
+                    print("[ERROR] The sensor might have a problem")
+                    raise Exception("SensorError")
                 data = json.dumps(msg_dict)
                 # following the possibility, the message is published or withdraw it
                 # since the gui represents the thermometer, it shows the temperature normally
-                if (virtual_failure_odds == 50): # TODO: CHANGE THIS, ODDS IS HIGHER THAN THE STANDARD JUST FOR A TEST
+                if (virtual_failure_odds == 50):
                     # withdraw the message
                     print("[ERROR] Failed")
                 else:
                     # publish the message
                     mqttc.publish(topic='iot/measure/thermometer', payload=data, qos=0)
                     print(f"{msg_dict}")
-            except (KeyboardInterrupt, SystemExit):
+            except (KeyboardInterrupt, SystemExit, Exception):
                 mqttc.disconnect()
+                root.destroy()
                 sys.exit()
         
             # refresh GUI
