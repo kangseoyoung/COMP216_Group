@@ -10,9 +10,8 @@ import paho.mqtt.client as mqtt
 import group_5_data_generator as dg
 
 class Publisher:
-    def __init__(self, start_id: int = None, max_msg: int = None) -> None:
-        self.start_id: int = start_id or 100
-        self.max_msg: int = max_msg or 500
+    def __init__(self, max_msg: int = None) -> None:
+        self.max_msg: int = max_msg or 0
         self.sample_set = dg.sample_set()
         # each publisher represents an IoT thermometer
         # each IoT thermometer has an unique serial number
@@ -23,7 +22,9 @@ class Publisher:
         self.pub_thread = threading.Thread(target=self.send_data, daemon=True)
         self.pub_thread.start()
     
+    start_id = 100000000
     temperature: float = 0
+    infinite_loop: bool = False
 
     # get a single value from generator
     def get_data(self) -> float:
@@ -31,12 +32,19 @@ class Publisher:
 
     # packaging the above value
     def create_data(self) -> Dict[str, str]:
+        # when the start_id reaches the limit, initialise it
+        if self.start_id == 999999999:
+            self.start_id = 100000000
         self.start_id += 1
+
         self.temperature = self.get_data() # get the temperature from the method
         # outlier generator
         virtual_outlier_adds = random.randint(1, 100)
         if (virtual_outlier_adds == 50): # TODO: CHANGE THIS, ODDS IS HIGHER THAN THE STANDARD JUST FOR A TEST
             self.temperature += random.randint(20, 40)
+        
+        time.sleep(1) # Sleep
+
         payload = {
             "id": f"{self.start_id}",
             "datetime": f"{datetime.now()}",
@@ -55,9 +63,13 @@ class Publisher:
         mqttc.on_publish = self._on_publish
         mqttc.connect(host='broker.emqx.io', port=1883)
 
-        for _ in range(self.max_msg):
+        if self.max_msg > 0:
+            pass
+        else:
+            self.infinite_loop = True
+        
+        while (self.max_msg > 0 or self.infinite_loop == True):
             virtual_failure_odds = random.randint(1, 100) # for the virtual failure
-            time.sleep(1) # Sleep
             try:
                 msg_dict = self.create_data() # get mqss data dict
                 data = json.dumps(msg_dict)
@@ -65,11 +77,11 @@ class Publisher:
                 # since the gui represents the thermometer, it shows the temperature normally
                 if (virtual_failure_odds == 50): # TODO: CHANGE THIS, ODDS IS HIGHER THAN THE STANDARD JUST FOR A TEST
                     # withdraw the message
-                    print("Published msg: ERROR!")
+                    print("[ERROR] Failed")
                 else:
                     # publish the message
                     mqttc.publish(topic='iot/measure/thermometer', payload=data, qos=0)
-                    print(f"Published msg: {msg_dict}")
+                    print(f"{msg_dict}")
             except (KeyboardInterrupt, SystemExit):
                 mqttc.disconnect()
                 sys.exit()
@@ -78,21 +90,23 @@ class Publisher:
             self.bar.temperature = self.temperature
             self.bar.refresh()
 
-    # static methods for mqtt
+            # control the loop
+            if self.infinite_loop == False:
+                self.max_msg -= 1
 
+    # static methods for mqtt
     def _on_connect(self, mqttc, userdata, flags, rc):
-        print('connected...rc=' + str(rc))
+        print(f'connected...rc={str(rc)}')
 
     def _on_disconnect(self, mqttc, userdata, rc):
-        print('disconnected...rc=' + str(rc))
+        print(f'disconnected...rc={str(rc)}')
 
     def _on_message(self, mqttc, userdata, msg):
         print('message received...')
-        print('topic: ' + msg.topic + ', qos: ' + 
-            str(msg.qos) + ', message: ' + str(msg.payload))
+        print(f'topic: {msg.topic}, qos: {str(msg.qos)}, message: {str(msg.payload)}')
 
     def _on_publish(self, mqttc, userdata, mid):
-        print("Message published ID :{}".format(mid))
+        print(f"Message No.{mid}")
     
 # GUI
 class Bar(Frame):
@@ -113,7 +127,7 @@ class Bar(Frame):
         self.canvas.create_rectangle(285, 20, 315, 980,outline='#222')
         
         # draw mark
-        temperatureList = ['50°C','40°C','30°C','20°C','10°C','0°C','10°C','20°C','30°C']
+        temperatureList = ['50°C','40°C','30°C','20°C','10°C','0°C','-10°C','-20°C','-30°C']
         y = 100
         for i in range(9):
             self.canvas.create_line(320, y + 100 * i, 345, y + 100 * i,width=3)
