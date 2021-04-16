@@ -33,9 +33,13 @@ class Publisher:
     def create_data(self) -> Dict[str, str]:
         self.start_id += 1
         self.temperature = self.get_data() # get the temperature from the method
+        # outlier generator
+        virtual_outlier_adds = random.randint(1, 100)
+        if (virtual_outlier_adds == 50): # TODO: CHANGE THIS, ODDS IS HIGHER THAN THE STANDARD JUST FOR A TEST
+            self.temperature += random.randint(20, 40)
         payload = {
             "id": f"{self.start_id}",
-            "time": f"{datetime.now()}",
+            "datetime": f"{datetime.now()}",
             "temperature": f"{self.temperature:.2f}",
             "unit": "celsius",
             "serial": self.serial
@@ -59,13 +63,13 @@ class Publisher:
                 data = json.dumps(msg_dict)
                 # following the possibility, the message is published or withdraw it
                 # since the gui represents the thermometer, it shows the temperature normally
-                if (virtual_failure_odds > 50): # TODO: CHANGE THIS, FOR A TEST, ODDS IS HIGHER THAN THE STANDARD
-                    # publish the message
-                    mqttc.publish(topic='iot/measure/thermometer', payload=data, qos=0)
-                    print("Published msg: {}".format(msg_dict))
-                else:
+                if (virtual_failure_odds == 50): # TODO: CHANGE THIS, ODDS IS HIGHER THAN THE STANDARD JUST FOR A TEST
                     # withdraw the message
                     print("Published msg: ERROR!")
+                else:
+                    # publish the message
+                    mqttc.publish(topic='iot/measure/thermometer', payload=data, qos=0)
+                    print(f"Published msg: {msg_dict}")
             except (KeyboardInterrupt, SystemExit):
                 mqttc.disconnect()
                 sys.exit()
@@ -140,6 +144,6 @@ class Bar(Frame):
 
 # run the code
 root = Tk()
-root.geometry('450x750')
+root.geometry('450x1000')
 pub = Publisher()
 root.mainloop()
