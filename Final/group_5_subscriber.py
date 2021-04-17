@@ -20,15 +20,24 @@ class Subscriber:
     values = list()
     timestamps = list()
     _sampling_size = 10
+    serial = ""
 
     def decode_msg(self, msg):
         msg = msg.decode('utf-8')
         payload = json.loads(msg)
         print("")
-        if len(self.values) < self._sampling_size:
+        if (self.serial == ""):
+            self.serial = payload.get('serial')
+        if (self.serial != payload.get('serial')):
+            pass
+        # until the number of values reache the sampling size, just pass
+        elif len(self.values) < self._sampling_size:
             self.process_data(payload)
+        # if the value is extreme outlier, it is ignored
         elif self.is_extream_outlier(float(payload.get('temperature'))) == False:
             self.process_data(payload)
+        else:
+            print("ERROR: The abnormal figrue was ignored.")
 
     def process_data(self, payload) -> None:
         self.values.append(float(payload.get('temperature')))
@@ -49,13 +58,6 @@ class Subscriber:
         LOF = P25 - 3*IQR
         HOF = P75 + 3*IQR
         return (value < LOF or value > HOF)
-
-    def print_data(self, payload):
-        print(f"Message ID: {payload.get('id')}\n"\
-            f"Received Time: {payload.get('datetime')}\n"\
-            f"Temperature: {payload.get('temperature')}\n"\
-            f"Unit: {payload.get('unit')}\n"\
-            f"Serial Number: {payload.get('serial')}\n")
 
     def receive_data(self) -> None:
         self.mqttc.on_connect = self._on_connect
@@ -163,11 +165,11 @@ class Subscriber:
             self.master.bind("<<refresh_plot>>", eventhandler)
 
 # run the code
-fig = plt.Figure(figsize=(9,5), dpi=100)
+fig = plt.Figure(figsize=(9,7), dpi=100)
 ax = fig.add_subplot(111)
 root = Tk()
 root.configure(background='white')
-root.geometry('900x500')
+root.geometry('900x700')
 
 sub = Subscriber()
 
