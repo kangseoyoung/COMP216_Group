@@ -10,14 +10,15 @@ import paho.mqtt.client as mqtt
 import group_5_data_generator as dg
 
 class Publisher:
-    def __init__(self, max_msg: int = None) -> None:
+    def __init__(self, publisher_id, max_msg: int = None) -> None:
         self.max_msg: int = max_msg or 0
+        self.publisher_id = publisher_id
         self.sample_set = dg.sample_set()
         # each publisher represents an IoT thermometer
         # each IoT thermometer has an unique serial number
         self.serial = "SN"+ f"{round(random.random(), 12)}"[2:] # generate a virtual serial number
         # init gui
-        self.bar = Bar(self.serial)
+        #self.bar = Bar(self.serial)
         # init mqttc messaging part in multi-thread
         self.pub_thread = threading.Thread(target=self.send_data, daemon=True)
         self.pub_thread.start()
@@ -47,6 +48,7 @@ class Publisher:
 
         payload = {
             "id": f"{self.start_id}",
+            "publisher_id": f"{self.publisher_id}",
             "datetime": f"{datetime.now()}",
             "temperature": f"{self.temperature:.2f}",
             "unit": "celsius",
@@ -97,12 +99,12 @@ class Publisher:
                     print(f"{msg_dict}")
             except (KeyboardInterrupt, SystemExit, Exception):
                 mqttc.disconnect()
-                root.destroy()
+                #root.destroy()
                 sys.exit()
         
             # refresh GUI
-            self.bar.temperature = self.temperature
-            self.bar.refresh()
+            #self.bar.temperature = self.temperature
+            #self.bar.refresh()
 
             # control the loop
             if self.infinite_loop == False:
@@ -171,7 +173,10 @@ class Bar(Frame):
         self.canvas.coords(self.mercury, 290, 600 - abs(self.temperature)/80 * 800, 310, 975)
 
 # run the code
-root = Tk()
-root.geometry('450x1000')
-pub = Publisher()
-root.mainloop()
+#root = Tk()
+#root.geometry('450x1000')
+pub1 = Publisher(publisher_id=1)
+pub2 = Publisher(publisher_id=2)
+pub3 = Publisher(publisher_id=3)
+pub4 = Publisher(publisher_id=4)
+#root.mainloop()
